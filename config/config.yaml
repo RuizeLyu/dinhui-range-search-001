@@ -1,0 +1,137 @@
+# 系统配置文件
+
+# 研究领域配置
+research:
+  # 研究领域名称
+  domain: "Skill Evolution in AI Systems"
+  # 关键词列表（用于搜索）
+  keywords:
+    - "skill evolution"
+    - "reinforcement learning"
+    - "self-evoagent"
+    - "autonomous skill acquisition"
+    - "lifelong learning"
+    - "skill transfer"
+    - "meta-learning"
+  # 时间范围（开始年份）
+  start_year: 2020
+  # 时间范围（结束年份，留空表示当前年份）
+  end_year: 
+
+# 文献来源配置
+sources:
+  # arXiv配置
+  arxiv:
+    # 是否启用
+    enabled: true
+    # 分类号（如 cs.CV, cs.AI 等）
+    categories:
+      - "cs.CV"
+      - "cs.AI"
+      - "cs.LG"
+    # 每页结果数
+    results_per_page: 50
+    # 最大结果数
+    max_results: 200
+  # Google Scholar配置
+  google_scholar:
+    # 是否启用
+    enabled: true
+    # 最大结果数
+    max_results: 100
+    # 请求间隔（秒），避免反爬
+    request_interval: 3
+
+# PDF获取配置
+pdf:
+  # 存储路径
+  storage_path: "data/pdf"
+  # 超时设置（秒）
+  timeout: 30
+  # 最大重试次数
+  max_retries: 3
+
+# PDF解析配置
+pdf_parsing:
+  # Grobid服务地址
+  grobid_url: "http://localhost:8070"
+  # 默认解析器（grobid 或 pymupdf）
+  default_parser: "grobid"
+
+# LLM分析配置
+llm:
+  # 模型类型（local 或 api）
+  model_type: "local"
+  # 本地模型配置
+  local:
+    # 模型路径
+    model_path: "path/to/deepseek-r1"
+    # 最大上下文长度
+    max_context_length: 32768
+    # 批处理大小
+    batch_size: 1
+  # API模型配置
+  api:
+    # API类型（openai, anthropic等）
+    api_type: "openai"
+    # API密钥
+    api_key: "your-api-key"
+    # 模型名称
+    model_name: "gpt-4o"
+  # SPO配置
+  spo:
+    # 是否启用SPO优化
+    enabled: true
+    # 优化轮数
+    optimization_rounds: 10
+    # 每轮采样问题数
+    samples_per_round: 3
+    # 评估模型类型（与model_type一致）
+    evaluation_model: "local"
+    # 优化器模型类型
+    optimizer_model: "api"
+
+# 数据库配置
+database:
+  # 数据库类型（sqlite 或 postgresql）
+  type: "sqlite"
+  # SQLite配置
+  sqlite:
+    # 数据库文件路径
+    db_path: "data/db/papers.db"
+  # PostgreSQL配置（可选）
+  postgresql:
+    # 主机
+    host: "localhost"
+    # 端口
+    port: 5432
+    # 数据库名
+    database: "dinhui"
+    # 用户名
+    user: "postgres"
+    # 密码
+    password: "your-password"
+
+# 报告生成配置
+report:
+  # 报告存储路径
+  output_path: "data/reports"
+  # 报告格式（markdown, html, word）
+  format: "markdown"
+  # 图表生成
+  generate_charts: true
+  # 趋势分析年数
+  trend_years: 5
+
+# 系统配置
+system:
+  # 日志级别（DEBUG, INFO, WARNING, ERROR）
+  log_level: "INFO"
+  # 并行处理数
+  max_workers: 4
+  # 缓存设置
+  cache:
+    # 是否启用
+    enabled: true
+    # 缓存路径
+    path: "data/cache"

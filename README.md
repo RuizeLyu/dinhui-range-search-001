@@ -1,136 +1,120 @@
 # dinhui-range-search-001
 为了顶会计划的第一步 - 面向特定研究领域的自动化文献综述系统
-> “面向特定研究领域的自动化文献综述系统” —— 通过智能爬取、筛选、解析与总结学术论文，构建结构化知识库，并最终输出领域发展现状的综合分析报告。
-> 
+> "面向特定研究领域的自动化文献综述系统" —— 通过智能爬取、筛选、解析与总结学术论文，构建结构化知识库，并最终输出领域发展现状的综合分析报告。
 
-下面我将从**目标、流程、技术实现建议、工具推荐**四个维度，为你完整梳理这个需求：
-
----
-
-## 一、核心目标（你要解决的问题）
-
-1. **聚焦一个特殊研究领域**（如“多模态大模型在医疗诊断中的应用”）；
-2. **自动从权威学术平台（Google Scholar、arXiv 等）爬取相关论文 PDF**；
-3. **设置时间过滤条件**（例如：只考虑 2020 年之后的论文）；
-4. **对每篇 PDF 使用大语言模型（LLM）进行结构化解析**，提取：
-    - 研究问题（What problem does this paper solve?）
-    - 方法/技术路线（How?）
-    - 创新点
-    - 实验结果/局限性
-    - 是否开源/可复现
-5. **将所有解析结果存入数据库**（如 SQLite / PostgreSQL / MongoDB）；
-6. **基于数据库内容自动生成领域综述报告**（含趋势分析、主流方法、空白点、建议方向等）。
-
----
-
-## 二、整体工作流程
-
-```mermaid
-graph LR
-A[定义研究领域 + 时间范围] --> B[自动爬取 Google Scholar / arXiv 论文元数据]
-B --> C[下载 PDF（若可获取）]
-C --> D[PDF 解析 → 提取文本]
-D --> E[调用大模型按模板提取结构化信息]
-E --> F[写入结构化数据库]
-F --> G[聚合分析 + 自动生成综述报告]
+## 项目结构
 
 ```
+dinhui-range-search-001/
+├── config/                  # 配置文件目录
+│   ├── config.yaml          # 主配置文件
+│   └── prompts/             # LLM提示词模板
+├── src/                     # 源代码目录
+│   ├── core/                # 核心模块
+│   ├── crawler/             # 文献爬取模块
+│   ├── pdf/                 # PDF处理模块
+│   ├── llm/                 # LLM分析模块
+│   ├── database/            # 数据库模块
+│   └── report/              # 报告生成模块
+├── scripts/                 # 脚本目录
+│   ├── run.py               # 运行脚本
+│   └── test.py              # 测试脚本
+├── data/                    # 数据目录
+│   ├── pdf/                 # PDF存储
+│   ├── db/                  # 数据库文件
+│   └── reports/             # 生成的报告
+├── tests/                   # 测试目录
+├── requirements.txt         # 依赖项
+└── README.md                # 项目说明
+```
 
----
+## 功能特点
 
-## 三、关键技术环节与建议
+1. **智能文献爬取**：从arXiv和Google Scholar自动获取相关论文
+2. **PDF自动下载**：支持从多个来源获取论文PDF
+3. **高效PDF解析**：集成Grobid和PyMuPDF，提取论文文本和结构
+4. **LLM结构化分析**：使用DeepSeek-R1提取研究问题、方法等关键信息
+5. **结构化数据库**：使用SQLite存储论文信息，支持高级查询
+6. **自动报告生成**：基于数据库内容生成综合综述报告，包含图表和分析
 
-### 1. **文献爬取**
+## 安装方法
 
-- **Google Scholar**：官方不开放 API，但可用 `scholarly`（Python 库）或 `Publish or Perish` 工具间接获取元数据（注意反爬限制）。
-- **arXiv**：提供官方 API（https://arxiv.org/help/api），支持按关键词、日期、类别筛选，可直接下载 PDF。
-- **建议策略**：
-    - 先用 arXiv 获取高质量预印本（尤其 CS/AI 领域）；
-    - 再用 Google Scholar 补充期刊/会议论文；
-    - 通过 DOI 或标题去 Sci-Hub / Unpaywall 尝试获取全文（需合规评估）。
+1. **克隆代码库**：
+   ```bash
+   git clone <repository-url>
+   cd dinhui-range-search-001
+   ```
 
-### 2. **PDF 解析**
+2. **安装依赖**：
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- 推荐工具：
-    - `PyMuPDF`（fitz）：速度快，保留格式较好；
-    - `pdfplumber`：适合提取表格和复杂布局；
-    - `Grobid`：专为学术 PDF 设计，可提取标题、作者、摘要、参考文献等结构（强烈推荐！）。
+3. **配置系统**：
+   - 编辑 `config/config.yaml` 文件，设置研究领域、时间范围等参数
 
-### 3. **大模型结构化提取**
+4. **部署Grobid（可选）**：
+   - 用于更准确的PDF解析
+   - 参考：https://grobid.readthedocs.io/en/latest/Install-Grobid/
 
-- **提示词模板示例**（Prompt Engineering）：
-    
-    ```
-    你是一位资深科研人员。请阅读以下论文全文，并按以下格式回答：
-    
-    【研究问题】：
-    【提出方法】：
-    【关键技术】：
-    【实验效果】：
-    【局限性】：
-    【是否开源】：
-    
-    论文内容：
-    {extracted_text}
-    
-    ```
-    
-- **模型选择**：
-    - 本地部署：`DeepSeek-R1`（2025年开源，MoE 架构，成本低，支持长上下文）；
-    - 云端 API：`GPT-4o`、`Claude 3.5 Sonnet`（处理能力强，但有 token 成本）；
-- **批处理优化**：使用异步 + 缓存机制，避免重复解析。
+## 使用方法
 
-### 4. **数据库设计（示例字段）**
+### 运行完整工作流程
 
-| 字段名 | 类型 | 说明 |
-| --- | --- | --- |
-| title | TEXT | 论文标题 |
-| authors | TEXT[] | 作者列表 |
-| publish_year | INT | 发表年份 |
-| source | TEXT | 来源（arXiv / ACL / IEEE 等） |
-| pdf_url | TEXT | PDF 链接 |
-| research_problem | TEXT | 研究问题 |
-| method_summary | TEXT | 方法摘要 |
-| innovation | TEXT | 创新点 |
-| limitations | TEXT | 局限性 |
-| is_open_source | BOOLEAN | 是否开源 |
-| llm_extract_time | DATETIME | LLM 解析时间 |
+```bash
+python scripts/run.py --domain "多模态大模型在医疗诊断中的应用" --start-year 2020
+```
 
-### 5. **自动报告生成**
+### 命令行参数
 
-- 使用 LLM 聚合数据库内容：
-    - “总结近五年该领域的三大技术路线”
-    - “列出尚未解决的关键挑战”
-    - “推荐 3 个值得深入的研究方向”
-- 输出格式：Markdown / Word / HTML 报告，可嵌入图表（如年度论文数量趋势图、关键词云等）。
+- `--domain`：研究领域名称
+- `--start-year`：开始年份
+- `--end-year`：结束年份（默认当前年份）
+- `--keywords`：搜索关键词列表
+- `--verbose`：启用详细输出
 
----
+### 测试各个模块
 
-## 四、推荐工具栈整合
+```bash
+python scripts/test.py
+```
 
-| 功能 | 推荐工具 |
-| --- | --- |
-| 文献发现 | arXiv API + WisPaper（智能推荐+订阅） |
-| PDF 下载 | arXiv + Unpaywall + custom scraper |
-| PDF 解析 | Grobid + PyMuPDF |
-| LLM 解析 | DeepSeek-R1（本地）或 GPT-4（API） |
-| 数据存储 | SQLite（轻量） / PostgreSQL（生产级） |
-| 报告生成 | LLM + Jinja2 模板 / LangChain |
+## 配置说明
 
-> ✅ 特别提醒：WisPaper（复旦 NLP 团队开发）已支持“一句话检索 + 自动推送最新论文”，可大幅减少爬虫开发成本，建议优先集成。
-> 
+主要配置文件：`config/config.yaml`
 
----
+- **research**：研究领域和时间范围设置
+- **sources**：文献来源配置（arXiv和Google Scholar）
+- **pdf**：PDF下载和存储配置
+- **pdf_parsing**：PDF解析配置
+- **llm**：LLM分析配置
+- **database**：数据库配置
+- **report**：报告生成配置
 
-## 五、你的最终产出
+## 技术栈
 
-一份**动态更新的领域知识库 + 自动综述报告系统**，可用于：
+- **Python 3.9+**：核心开发语言
+- **arXiv API + scholarly**：文献爬取
+- **Grobid + PyMuPDF**：PDF解析
+- **DeepSeek-R1**：LLM分析
+- **SQLite**：数据存储
+- **Jinja2 + matplotlib**：报告生成
 
-- 快速掌握一个陌生领域的研究全景；
-- 发现研究空白，指导课题选题；
-- 支撑科研立项、开题报告、文献综述撰写；
-- 甚至作为 AI 科研助手的基础模块。
+## 注意事项
 
----
+1. **反爬限制**：使用Google Scholar时请注意遵守网站规则，避免频繁请求
+2. **API密钥**：如果使用云端LLM API，需要在配置文件中设置API密钥
+3. **存储容量**：随着论文数量增加，需要确保有足够的存储空间
+4. **计算资源**：LLM分析可能需要较大的计算资源，建议在性能较好的机器上运行
 
-如果你能提供具体的**研究领域关键词**（比如“联邦学习中的隐私保护”、“具身智能导航”等），我可以进一步帮你设计关键词组合、arXiv 分类号、以及初始 Prompt 模板。需要吗？
+## 未来计划
+
+1. 添加Web界面，方便用户操作
+2. 支持更多文献来源
+3. 优化LLM分析效率
+4. 增加更多可视化图表
+5. 支持交互式报告
+
+## 贡献
+
+欢迎提交Issue和Pull Request，帮助改进这个项目！
